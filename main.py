@@ -1,30 +1,51 @@
 import requests
 import pprint
+import time
+import random
+
 from settings import TOKEN
+
+replics = ["привет", "как дела?", "кто ты?"]
+answers = [
+    ['привет', 'ЗДАРОВА', 'ХАЙ'],
+    ["НОРМ", "ХОРОШО", "КУЛ"],
+    ["ты", "я робот, как и ты ", "Павел Дуров"]
+]
 
 URL = 'https://api.telegram.org/bot'
 
 
-METHOD_getUpdates = '/getUpdates'
+def get_updates(offset=0):
+    """Returned a list with message
+    :param offset:
+    :return:
+    """
+    result = requests.get(f'{URL}{TOKEN}/getUpdates?offset={offset}').json()
+    return result['result']
 
-METHOD_send_message = '/sendMessage'
 
-METHOD_sendPhoto = '/sendPhoto'
+def send_message(text, chat_id):
+    requests.get(f"{URL}{TOKEN}/sendMessage?chat_id={chat_id}&text={text}")
 
-print(URL+TOKEN+METHOD_getUpdates)
-updates = requests.get(URL+TOKEN+METHOD_getUpdates).json()
-pprint.pprint(updates)
 
-if not updates['result']:
-    print("У БОТА НЕТ НОВЫХ СООБЩЕНИЙ")
-else:
-    chat_id = updates["result"][0]["message"]["chat"]["id"]
-    print(chat_id)
-    user_choice = input("Что хотите отправить боту\n1 - текстовое сообщение\n2 - картинку\n|$~>")
+pprint.pprint(get_updates())
 
-    if user_choice == '1':
-        text = input("Введите что хотите отправить через бота пользователю")
-        requests.get(URL+TOKEN+METHOD_send_message+f"?chat_id={chat_id}&text={text}")
-    elif user_choice == '2':
-        link_to_picture = input("Введите ссылку на картинку:")
-        requests.get(URL+TOKEN+METHOD_sendPhoto+f"?chat_id={chat_id}&caption=kek&photo={link_to_picture}")
+
+def run():
+    update_id = get_updates()[-1]['update_id']  # Присваиваем ID последнего отправленного сообщения боту
+    while True:
+        time.sleep(2)
+        messages = get_updates(update_id)  # Получаем обновления
+        for message in messages:
+            # Если в обновлении есть ID больше чем ID последнего сообщения, значит пришло новое сообщение
+            if update_id < message['update_id']:
+                update_id = message['update_id']  # Присваиваем ID последнего отправленного сообщения боту
+
+                message_user = message['message']['text'].lower()
+                if message_user in replics:
+                    random_answer = random.choice(answers[replics.index(message_user)])
+                    send_message(random_answer, message['message']['chat']['id'])
+                print(f"ID пользователя: {message['message']['chat']['id']}, Сообщение: {message['message']['text']}")
+
+
+run()
