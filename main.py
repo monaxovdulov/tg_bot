@@ -12,6 +12,8 @@ answers = [
     ["ты", "я робот, как и ты ", "Павел Дуров"]
 ]
 
+is_program_run = True
+
 URL = 'https://api.telegram.org/bot'
 
 
@@ -32,6 +34,9 @@ pprint.pprint(get_updates())
 
 
 def run():
+    if not get_updates():
+        return 'empty_list'
+
     update_id = get_updates()[-1]['update_id']  # Присваиваем ID последнего отправленного сообщения боту
     while True:
         time.sleep(2)
@@ -48,4 +53,12 @@ def run():
                 print(f"ID пользователя: {message['message']['chat']['id']}, Сообщение: {message['message']['text']}")
 
 
-run()
+program_result = run()
+while is_program_run:
+    if program_result == 'empty_list':
+        print("У бота нет новых сообщений попробуйте написать ему что нибудь")
+        input()
+        program_result = run()
+    else:
+        program_result = run()
+
